@@ -96,8 +96,8 @@ RANDOM_ENGAGEMENT = 1   # ← NEW: replaces most of the old "none"
 RANDOM_NONE = 0   # ← now rare, feels realistic
 
 # Random engagement probabilities
-ENGAGEMENT_QUOTE_WEIGHT    = 0.5   # ← 85% chance to QUOTE (with AI comment)
-ENGAGEMENT_REPOST_WEIGHT  = 0.5   # ← 15% chance to native REPOST
+ENGAGEMENT_QUOTE_WEIGHT    = 0   # ← 85% chance to QUOTE (with AI comment)
+ENGAGEMENT_REPOST_WEIGHT  = 1   # ← 15% chance to native REPOST
 ENGAGEMENT_LIKE_WEIGHT    = 0.0
 
 # Daily tweet limits
