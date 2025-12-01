@@ -86,7 +86,7 @@ RSS_FEEDS = [
 # Log file to track posted and filtered news
 LOG_FILE = "filtered_news.json"
 REPLY_LOG_FILE = "replied_tweets.json"
-TARGET_TWEETS_LOG = "target_tweets.json"
+TARGET_TWEETS_LOG = "target_engagement_tweets.json" 
 RETENTION_DAYS = 10  # Remove news older than 10 days
 TWEET_THRESHOLD = 9 # Define score threshold for tweets
 
@@ -567,19 +567,46 @@ def count_replies_today(reply_log):
     return sum(1 for entry in reply_log.values() if entry["date"] == today)
 
 def fetch_latest_tweets(user_id, max_results=REPLY_FETCH_LIMIT):
-    """Fetch the latest tweets from a specific user."""
     try:
         tweets = bearer_client.get_users_tweets(
             id=user_id,
             max_results=max_results,
-            tweet_fields=["id", "text", "created_at"],
-            exclude=["retweets", "replies"],
+            tweet_fields=["text", "created_at"],
+            exclude=["retweets", "replies"]
         )
-        return tweets.data if tweets.data else []
-    except tweepy.errors.TweepyException as e:
-        print(f"❌ Error fetching tweets for user {user_id}: {e}")
-        return []
+        if not tweets.data:
+            return []
 
+        log = load_target_tweets()
+        today = datetime.utcnow().strftime("%Y-%m-%d")
+        saved = 0
+
+        for tweet in tweets.data:
+            tid = str(tweet.id)
+            if tid in log:
+                continue  # already have it
+
+            # Score relevance immediately
+            relevance = classify_mention_relevance(tweet.text)
+
+            log[tid] = {
+                "text": tweet.text,
+                "author_id": user_id,
+                "date": today,
+                "relevance": relevance,    # ← now saved!
+                "action": None             # will be quote/repost/like later
+            }
+            saved += 1
+
+        if saved > 0:
+            save_target_tweets(log)
+            print(f"Saved {saved} new tweets with relevance scores")
+
+        return tweets.data
+
+    except Exception as e:
+        print(f"Error fetching tweets: {e}")
+        return []
 
 def generate_grok_reply(tweet_text, username):
     """ Use Grok-2-1212 to generate a smart, relevant reply based on the tweet. """
@@ -756,7 +783,7 @@ def process_mention_engagement():
                     twitter_client.create_tweet(text=comment, quote_tweet_id=int(tid))
                     data[tid]["action"] = "quote"
                     data[tid]["date"] = datetime.utcnow().strftime("%Y-%m-%d")
-                    print(f"Quoted @{TARGET_ACCOUNTS.inverse.get(entry['author_id'], 'unknown')}: {comment[:60]}...")
+                    print(f"Quote-tweeted a relevant post: {comment[:60]}...")
                     processed += 1
                     save_target_tweets(data)
                     return
