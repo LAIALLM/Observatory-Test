@@ -34,7 +34,7 @@ jobs:
           [ -f replied_tweets.json ]           || echo '{}' > replied_tweets.json
           [ -f target_engagement_tweets.json ] || echo '{}' > target_engagement_tweets.json
 
-          echo "All log files initialized
+          echo "All log files initialized"
 
       - name: 🚀 Run Script
         env:
