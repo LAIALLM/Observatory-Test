@@ -23,15 +23,18 @@ jobs:
       - name: 🏗️ Set Up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: "3.11"
 
       - name: 📦 Install Dependencies
         run: pip install --upgrade requests tweepy openai feedparser
         
       - name: 📄 Initialize Log Files
         run: |
-          if [ ! -f filtered_news.json ]; then echo '[]' > filtered_news.json; fi
-          if [ ! -f replied_tweets.json ]; then echo '{}' > replied_tweets.json; fi
+          [ -f filtered_news.json ]           || echo '[]'  > filtered_news.json
+          [ -f replied_tweets.json ]           || echo '{}' > replied_tweets.json
+          [ -f target_engagement_tweets.json ] || echo '{}' > target_engagement_tweets.json
+
+          echo "All log files initialized
 
       - name: 🚀 Run Script
         env:
@@ -50,12 +53,12 @@ jobs:
           git config --global user.name "GitHub Actions"
 
           # Stage both log files (if they exist)
-          git add filtered_news.json replied_tweets.json || true  # stage files
-      
-          # Check if there is anything staged
+          git add filtered_news.json replied_tweets.json target_engagement_tweets.json || true
+
+          # Only commit if something changed
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Update filtered_news.json & replied_tweets.json [Automated]"
+            git commit -m "Update logs: news, replies, and engagement tweets [Automated]"
             git push origin main
           fi
