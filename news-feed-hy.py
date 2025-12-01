@@ -105,7 +105,7 @@ REPLY_TWEETS_LIMIT = 3
 # Daily limits for retweets/quotes (adjust as needed)
 DAILY_QUOTE_LIMIT = 1
 DAILY_REPOST_LIMIT = 2
-DAILY_LIKE_LIMIT = 3   # Very safe
+DAILY_LIKE_LIMIT = 0   # Very safe
 
 # =========================================================
 #                        HELPERS
