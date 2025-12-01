@@ -591,6 +591,7 @@ def fetch_latest_tweets(user_id, max_results=REPLY_FETCH_LIMIT):
             score = classify_mention_relevance(tweet.text)   # ← use 'score'
 
             log[tid] = {
+                "tweet_id": tid,
                 "text": tweet.text,
                 "author_id": user_id,
                 "date": today,
