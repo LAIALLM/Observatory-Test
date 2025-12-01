@@ -96,9 +96,9 @@ RANDOM_ENGAGEMENT = 1   # ← NEW: replaces most of the old "none"
 RANDOM_NONE = 0   # ← now rare, feels realistic
 
 # Random engagement probabilities
-ENGAGEMENT_QUOTE_WEIGHT    = 0.4   # ← 85% chance to QUOTE (with AI comment)
-ENGAGEMENT_REPOST_WEIGHT  = 0.4   # ← 15% chance to native REPOST
-ENGAGEMENT_LIKE_WEIGHT    = 0.2
+ENGAGEMENT_QUOTE_WEIGHT    = 0   # ← 85% chance to QUOTE (with AI comment)
+ENGAGEMENT_REPOST_WEIGHT  = 0   # ← 15% chance to native REPOST
+ENGAGEMENT_LIKE_WEIGHT    = 1
 
 # Daily tweet limits
 NEWS_TWEETS_LIMIT = 3  # Max news tweets per day
