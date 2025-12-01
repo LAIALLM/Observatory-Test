@@ -590,6 +590,9 @@ def fetch_latest_tweets(user_id, max_results=REPLY_FETCH_LIMIT):
             # Score relevance immediately
             score = classify_mention_relevance(tweet.text)   # ← use 'score'
 
+             # ←←← FIXED: Define handle here
+            handle = next((k for k, v in TARGET_ACCOUNTS.items() if v == user_id), "unknown")
+
             log[tid] = {
                 "tweet_id": tid,
                 "text": tweet.text,
