@@ -814,7 +814,7 @@ def process_mention_engagement():
         elif (action == "repost" and score >= 7 and 
               count_engagement_action(data, "repost") < DAILY_REPOST_LIMIT):
             try:
-                twitter_client.create_tweet(retweet_of_tweet_id=int(tid))
+                twitter_client.create_tweet(tweet_id=int(tid))
                 data[tid]["action"] = "repost"
                 data[tid]["date"] = datetime.utcnow().strftime("%Y-%m-%d")
                 print("Reposted from target account")
