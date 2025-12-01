@@ -594,6 +594,7 @@ def fetch_latest_tweets(user_id, max_results=REPLY_FETCH_LIMIT):
                 "tweet_id": tid,
                 "text": tweet.text,
                 "author_id": user_id,
+                "author_handle": handle,
                 "date": today,
                 "relevance_score": score,   # ← now 0–10 integer
                 "action": None
