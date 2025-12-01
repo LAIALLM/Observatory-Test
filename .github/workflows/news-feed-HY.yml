@@ -1,0 +1,61 @@
+name: Auto-Post Construction News HYBRID
+
+on:
+  schedule:
+    - cron: "*/50 * * * *"  # Runs every 50 minutes
+  workflow_dispatch:  # Allows manual triggering
+
+permissions:
+  contents: write  # Ensures GitHub Actions can push changes to the repo
+
+concurrency:
+  group: auto-post-news  # Unique identifier for this workflow
+  cancel-in-progress: true  # Cancels any ongoing run when a new one starts
+
+jobs:
+  post_news:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: 🏗️ Set Up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: 📦 Install Dependencies
+        run: pip install --upgrade requests tweepy openai feedparser
+        
+      - name: 📄 Initialize Log Files
+        run: |
+          if [ ! -f filtered_news.json ]; then echo '[]' > filtered_news.json; fi
+          if [ ! -f replied_tweets.json ]; then echo '{}' > replied_tweets.json; fi
+
+      - name: 🚀 Run Script
+        env:
+          TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+          TWITTER_SECRET: ${{ secrets.TWITTER_SECRET }}
+          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_SECRET: ${{ secrets.TWITTER_ACCESS_SECRET }}
+          TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python news-feed-hy.py  # Runs your bot script
+
+      - name: 🔄 Commit and Push Updates (filtered_news.json & replied_tweets.json)
+        run: |
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "GitHub Actions"
+
+          # Stage both log files (if they exist)
+          git add filtered_news.json replied_tweets.json || true  # stage files
+      
+          # Check if there is anything staged
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update filtered_news.json & replied_tweets.json [Automated]"
+            git push origin main
+          fi
