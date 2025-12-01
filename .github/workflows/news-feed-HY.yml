@@ -26,7 +26,9 @@ jobs:
           python-version: "3.11"
 
       - name: 📦 Install Dependencies
-        run: pip install --upgrade requests tweepy openai feedparser
+        run: |
+          python -m pip install --upgrade pip
+          pip install --upgrade tweepy>=4.14.0 openai feedparser requests
         
       - name: 📄 Initialize Log Files
         run: |
