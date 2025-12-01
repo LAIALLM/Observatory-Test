@@ -422,12 +422,17 @@ Format:
     - **Use proper line breaks for readability.** If the tweet contains multiple paragraphs, insert a blank line between them.
     """
 
-    client = openai.OpenAI(api_key=OPENAI_API_KEY)
+    client = openai.OpenAI(
+        api_key=XAI_API_KEY,
+        base_url="https://api.x.ai/v1"
+    )
     response = client.chat.completions.create(
-        model=OPENAI_MODEL,
+        model=XAI_MODEL,
         messages=[{"role": "user", "content": prompt}]
     )
-    return response.choices[0].message.content.strip()
+
+    tweet = response.choices[0].message.content.strip()
+    return tweet[:280]  # safety: hard cap at 280 chars
 
 # =========================================================
 #      AI: INFRASTRUCTURE TWEET GENERATORS
