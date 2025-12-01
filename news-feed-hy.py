@@ -44,11 +44,7 @@ twitter_client = tweepy.Client(
 
 # **Accounts to Follow** You can look up IDs with the X API or tools like tweeterid.com. https://twiteridfinder.com/
 TARGET_ACCOUNTS = {
-    "sama": "1605",        # Replace with actual user IDs
-    "elonmusk": "44196397",    # Replace with actual user IDs
-    "stats_feed": "1335132884278108161",   # Replace with actual user IDs
-    "VitalikButerin": "295218901",
-    "balajis": "2178012643"
+    "CityLab": "331803536"       # Replace with actual user IDs
 }
 
 # How many recent tweets we READ per reply run
@@ -104,7 +100,7 @@ NEWS_TWEETS_LIMIT = 3  # Max news tweets per day
 STAT_TWEETS_LIMIT = 1  # Max statistical tweets per day
 INFRA_TWEETS_LIMIT= 1
 CRYPTO_TWEETS_LIMIT= 1
-REPLY_TWEETS_LIMIT = 1
+REPLY_TWEETS_LIMIT = 3
 
 # Daily limits for retweets/quotes (adjust as needed)
 DAILY_QUOTE_LIMIT = 1
