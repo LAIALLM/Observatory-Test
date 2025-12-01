@@ -86,16 +86,18 @@ RSS_FEEDS = [
 # Log file to track posted and filtered news
 LOG_FILE = "filtered_news.json"
 REPLY_LOG_FILE = "replied_tweets.json"
+TARGET_TWEETS_LOG = "target_tweets.json"
 RETENTION_DAYS = 10  # Remove news older than 10 days
 TWEET_THRESHOLD = 9 # Define score threshold for tweets
 
-# Random tweets probabilities
-RANDOM_NEWS = 0.2
-RANDOM_STATISTIC = 0.1
-RANDOM_INFRASTRUCTURE = 0.1
-RANDOM_CRYPTO = 0.2
-RANDOM_REPLY = 0.2 
-RANDOM_NONE = 0.2
+# Random tweets probabilities — UPDATED
+RANDOM_NEWS = 0.20
+RANDOM_STATISTIC = 0.10
+RANDOM_INFRASTRUCTURE = 0.10
+RANDOM_CRYPTO = 0.1
+RANDOM_REPLY = 0.2
+RANDOM_ENGAGEMENT = 0.2   # ← NEW: replaces most of the old "none"
+RANDOM_NONE = 0.1   # ← now rare, feels realistic
 
 # Daily tweet limits
 NEWS_TWEETS_LIMIT = 3  # Max news tweets per day
@@ -103,6 +105,11 @@ STAT_TWEETS_LIMIT = 1  # Max statistical tweets per day
 INFRA_TWEETS_LIMIT= 1
 CRYPTO_TWEETS_LIMIT= 1
 REPLY_TWEETS_LIMIT = 1
+
+# Daily limits for retweets/quotes (adjust as needed)
+DAILY_QUOTE_LIMIT = 1
+DAILY_REPOST_LIMIT = 2
+DAILY_LIKE_LIMIT = 3   # Very safe
 
 # =========================================================
 #                        HELPERS
@@ -184,11 +191,31 @@ def save_processed_articles(processed):
     except Exception as e:
         print(f"❌ Error writing to JSON: {e}")
         return  # Stop execution if writing fails
+        
+#HELPER FOR QUOTE REPOST / REPOST / LIKES
+def load_target_tweets():
+    if os.path.exists(TARGET_TWEETS_LOG):
+        try:
+            with open(TARGET_TWEETS_LOG, "r") as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
 
+def save_target_tweets(data):
+    with open(TARGET_TWEETS_LOG, "w") as f:
+        json.dump(data, f, indent=4)
+
+def cleanup_target_tweets():
+    data = load_target_tweets()
+    cutoff = (datetime.utcnow() - timedelta(days=RETENTION_DAYS)).strftime("%Y-%m-%d")
+    cleaned = {tid: entry for tid, entry in data.items() if entry.get("date", "0000-00-00") >= cutoff}
+    save_target_tweets(cleaned)
+    return cleaned
 
 # Consolidated randomness function for post type
 def select_tweet_type():
-    return random.choices(["news", "statistical", "infrastructure", "crypto", "reply", "none"], [RANDOM_NEWS, RANDOM_STATISTIC, RANDOM_INFRASTRUCTURE, RANDOM_CRYPTO, RANDOM_REPLY, RANDOM_NONE])[0]
+    return random.choices(["news", "statistical", "infrastructure", "crypto", "reply", "engagement", "none"], [RANDOM_NEWS, RANDOM_STATISTIC, RANDOM_INFRASTRUCTURE, RANDOM_CRYPTO, RANDOM_REPLY, RANDOM_ENGAGEMENT, RANDOM_NONE])[0]
 
 # Count how many news tweets were posted today.
 def count_news_tweets_today(processed_articles):
@@ -210,6 +237,11 @@ def count_crypto_tweets_today(processed_articles):
     today = datetime.utcnow().strftime("%Y-%m-%d")
     return sum(1 for article in processed_articles if article.get("date") == today and article.get("type") == "crypto")
 
+# Count how many crypto tweets were posted today.
+def count_engagement_action(data, action):
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    return sum(1 for entry in data.values() if entry.get("date") == today and entry.get("action") == action)
+    
 
 
 # =========================================================
@@ -647,6 +679,119 @@ def reply_to_random_tweet():
     except tweepy.errors.TweepyException as e:
         print(f"❌ Error posting reply: {e}")
 
+
+# =========================================================
+#             SMART MENTIONS ENGAGEMENT (Quote/RT/Like)
+# =========================================================
+
+def load_engagement_log():
+    if os.path.exists(MENTIONS_LOG_FILE):
+        try: return json.load(open(MENTIONS_LOG_FILE))
+        except: return {}
+    return {}
+
+def save_engagement_log(data):
+    with open(MENTIONS_LOG_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+def classify_mention_relevance(text):
+    client = openai.OpenAI(api_key=XAI_API_KEY, base_url="https://api.x.ai/v1")
+    prompt = f"""
+    Classify this mention for a construction/infrastructure account.
+    Reply only: VERY_RELEVANT / RELEVANT / IRRELEVANT
+
+    VERY_RELEVANT: new cities, construction projects, bridges, tunnels, airports, railways, housing crisis, population growth, smart cities, urban planning.
+
+    Tweet: "{text}"
+    """
+    try:
+        resp = client.chat.completions.create(model=XAI_MODEL, messages=[{"role": "user", "content": prompt}], max_tokens=10, temperature=0)
+        r = resp.choices[0].message.content.strip().upper()
+        return {"VERY_RELEVANT": "very", "RELEVANT": "somewhat"}.get(r, "no")
+    except:
+        return "no"
+
+def generate_quote_comment(text):
+    client = openai.OpenAI(api_key=XAI_API_KEY, base_url="https://api.x.ai/v1")
+    prompt = f"Write a sharp, professional quote tweet (max 180 chars) adding construction/infra value. No hashtags, no @, no emojis except flags.\nOriginal: {text}"
+    try:
+        resp = client.chat.completions.create(model=XAI_MODEL, messages=[{"role": "user", "content": prompt}], max_tokens=100, temperature=0.7)
+        return resp.choices[0].message.content.strip()[:180]
+    except:
+        return None
+
+def process_mention_engagement():
+    data = cleanup_target_tweets()  # Auto-remove old tweets
+    if not data:
+        print("No target tweets in pool")
+        return
+
+    # Filter tweets that haven't been engaged with yet
+    available = [ (tid, entry) for tid, entry in data.items() if entry.get("action") is None ]
+    if not available:
+        print("All target tweets already engaged with")
+        return
+
+    # Random-within-random: pick action type
+    action = random.choices(
+        ["quote", "repost", "like"],
+        weights=[0.25, 0.35, 0.40]
+    )[0]
+
+    print(f"Engagement mode: {action.upper()} → curating from target accounts")
+
+    processed = 0
+    random.shuffle(available)
+
+    for tid, entry in available:
+        text = entry["text"]
+        relevance = classify_mention_relevance(text)
+
+        # QUOTE: only very relevant + limit 1
+        if (action == "quote" and relevance == "very" and 
+            count_engagement_action(data, "quote") < DAILY_QUOTE_LIMIT):
+            comment = generate_quote_comment(text)
+            if comment and 15 < len(comment) < 200:
+                try:
+                    twitter_client.create_tweet(text=comment, quote_tweet_id=int(tid))
+                    data[tid]["action"] = "quote"
+                    data[tid]["date"] = datetime.utcnow().strftime("%Y-%m-%d")
+                    print(f"Quoted @{TARGET_ACCOUNTS.inverse.get(entry['author_id'], 'unknown')}: {comment[:60]}...")
+                    processed += 1
+                    save_target_tweets(data)
+                    return
+                except: pass
+
+        # REPOST
+        elif (action == "repost" and relevance in ["very", "somewhat"] and 
+              count_engagement_action(data, "repost") < DAILY_REPOST_LIMIT):
+            try:
+                twitter_client.create_tweet(retweet_of_tweet_id=int(tid))
+                data[tid]["action"] = "repost"
+                data[tid]["date"] = datetime.utcnow().strftime("%Y-%m-%d")
+                print("Reposted from target account")
+                processed += 1
+                if processed >= 2:
+                    save_target_tweets(data)
+                    return
+            except: pass
+
+        # LIKE
+        elif (action == "like" and count_engagement_action(data, "like") < DAILY_LIKE_LIMIT):
+            try:
+                twitter_client.like(int(tid))
+                data[tid]["action"] = "like"
+                data[tid]["date"] = datetime.utcnow().strftime("%Y-%m-%d")
+                processed += 1
+            except: pass
+
+        if processed >= 3:
+            break
+
+    save_target_tweets(data)
+    print(f"Engagement complete: {processed} actions")
+    
+
 # =========================================================
 #                      POSTING
 # =========================================================
@@ -854,6 +999,10 @@ if __name__ == "__main__":
 
     elif tweet_type == "reply":
         reply_to_random_tweet()
+
+    elif tweet_type == "engagement":
+        print("Engagement cycle — curating construction/infra mentions silently")
+        process_mention_engagement()
 
     else:
         print("🤖 No tweet posted in this run to simulate human-like activity.")
