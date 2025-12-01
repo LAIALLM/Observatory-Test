@@ -593,8 +593,8 @@ def fetch_latest_tweets(user_id, max_results=REPLY_FETCH_LIMIT):
                 "text": tweet.text,
                 "author_id": user_id,
                 "date": today,
-                "relevance": relevance,    # ← now saved!
-                "action": None             # will be quote/repost/like later
+                "relevance_score": score,   # ← now 0–10 integer
+                "action": None
             }
             saved += 1
 
@@ -723,20 +723,35 @@ def save_engagement_log(data):
 
 def classify_mention_relevance(text):
     client = openai.OpenAI(api_key=XAI_API_KEY, base_url="https://api.x.ai/v1")
+    
     prompt = f"""
-    Classify this mention for a construction/infrastructure account.
-    Reply only: VERY_RELEVANT / RELEVANT / IRRELEVANT
+    You are scoring tweets for a construction & infrastructure-focused X account.
+    Assign a relevance score from 0 to 10 (integer only) based on how directly it relates to physical or digital infrastructure.
 
-    VERY_RELEVANT: new cities, construction projects, bridges, tunnels, airports, railways, housing crisis, population growth, smart cities, urban planning.
+    Scoring rules:
+    - 9–10: Major real-world projects (tunnels, bridges, airports, railways, highways, gigafactories, AI data centers, undersea cables, power plants, dams)
+    - 7–8: Confirmed medium-scale projects, expansions, or specific infrastructure investments
+    - 5–6: General but relevant discussion (housing crisis driving construction, data center demand, smart cities, zoning, permitting)
+    - 1–4: Vague, speculative, or only loosely related
+    - 0: Completely off-topic (sports, entertainment, pure software, memes, politics without infra)
+
+    Reply only with a single integer 0–10. No explanation.
 
     Tweet: "{text}"
     """
+
     try:
-        resp = client.chat.completions.create(model=XAI_MODEL, messages=[{"role": "user", "content": prompt}], max_tokens=10, temperature=0)
-        r = resp.choices[0].message.content.strip().upper()
-        return {"VERY_RELEVANT": "very", "RELEVANT": "somewhat"}.get(r, "no")
+        resp = client.chat.completions.create(
+            model=XAI_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=5,
+            temperature=0.1
+        )
+        score_text = resp.choices[0].message.content.strip()
+        score = int(score_text)
+        return max(0, min(10, score))  # Clamp to 0–10
     except:
-        return "no"
+        return 0
 
 def generate_quote_comment(text):
     client = openai.OpenAI(api_key=XAI_API_KEY, base_url="https://api.x.ai/v1")
@@ -754,7 +769,7 @@ def process_mention_engagement():
         return
 
     # Filter tweets that haven't been engaged with yet
-    available = [ (tid, entry) for tid, entry in data.items() if entry.get("action") is None ]
+    available = [(tid, entry) for tid, entry in data.items() if entry.get("action") is None]
     if not available:
         print("All target tweets already engaged with")
         return
@@ -772,25 +787,30 @@ def process_mention_engagement():
 
     for tid, entry in available:
         text = entry["text"]
-        relevance = classify_mention_relevance(text)
+        score = entry.get("relevance_score", 0)  # Use pre-scored value
 
-        # QUOTE: only very relevant + limit 1
-        if (action == "quote" and relevance == "very" and 
+        # QUOTE: only 9–10
+        if (action == "quote" and score >= 9 and 
             count_engagement_action(data, "quote") < DAILY_QUOTE_LIMIT):
             comment = generate_quote_comment(text)
             if comment and 15 < len(comment) < 200:
                 try:
                     twitter_client.create_tweet(text=comment, quote_tweet_id=int(tid))
+                    
+                    # ←←← NOW SAVES THE ACTUAL QUOTE TEXT!
                     data[tid]["action"] = "quote"
                     data[tid]["date"] = datetime.utcnow().strftime("%Y-%m-%d")
-                    print(f"Quote-tweeted a relevant post: {comment[:60]}...")
+                    data[tid]["quote_text"] = comment.strip()   # ← THIS IS THE FIX!
+                    
+                    print(f"Quote-tweeted: {comment[:60]}...")
                     processed += 1
                     save_target_tweets(data)
-                    return
-                except: pass
+                    return  # One quote per run is enough
+                except Exception as e:
+                    print(f"Quote failed: {e}")
 
-        # REPOST
-        elif (action == "repost" and relevance in ["very", "somewhat"] and 
+        # REPOST: 7–10
+        elif (action == "repost" and score >= 7 and 
               count_engagement_action(data, "repost") < DAILY_REPOST_LIMIT):
             try:
                 twitter_client.create_tweet(retweet_of_tweet_id=int(tid))
@@ -801,16 +821,19 @@ def process_mention_engagement():
                 if processed >= 2:
                     save_target_tweets(data)
                     return
-            except: pass
+            except Exception as e:
+                print(f"Repost failed: {e}")
 
-        # LIKE
-        elif (action == "like" and count_engagement_action(data, "like") < DAILY_LIKE_LIMIT):
+        # LIKE: 5–10 (or everything if like mode)
+        elif (action == "like" and score >= 5 and 
+              count_engagement_action(data, "like") < DAILY_LIKE_LIMIT):
             try:
                 twitter_client.like(int(tid))
                 data[tid]["action"] = "like"
                 data[tid]["date"] = datetime.utcnow().strftime("%Y-%m-%d")
                 processed += 1
-            except: pass
+            except Exception as e:
+                print(f"Like failed: {e}")
 
         if processed >= 3:
             break
