@@ -79,5 +79,32 @@
         "date": "2025-12-01",
         "relevance_score": 3,
         "action": null
+    },
+    "1995780047668396508": {
+        "tweet_id": "1995780047668396508",
+        "text": "New York Mets owner Steve Cohen won approval to operate a casino next to Citi Field in Queens https://t.co/o4Ouz4GyGn",
+        "author_id": "331803536",
+        "author_handle": "CityLab",
+        "date": "2025-12-02",
+        "relevance_score": 7,
+        "action": null
+    },
+    "1995689523108327887": {
+        "tweet_id": "1995689523108327887",
+        "text": "What we know about Hong Kong's deadly fire https://t.co/8B9Ft2Gs1l",
+        "author_id": "331803536",
+        "author_handle": "CityLab",
+        "date": "2025-12-02",
+        "relevance_score": 3,
+        "action": null
+    },
+    "1995644223459102803": {
+        "tweet_id": "1995644223459102803",
+        "text": "New York Mets owner Steve Cohen won approval to operate a casino next to Citi Field in Queens https://t.co/SpzBsoj6CZ",
+        "author_id": "331803536",
+        "author_handle": "CityLab",
+        "date": "2025-12-02",
+        "relevance_score": 7,
+        "action": null
     }
 }
