@@ -83,8 +83,14 @@ RSS_FEEDS = [
 LOG_FILE = "filtered_news.json"
 REPLY_LOG_FILE = "replied_tweets.json"
 TARGET_TWEETS_LOG = "target_engagement_tweets.json" 
+
+# Dedicated log for real @-mention replies
+MENTIONS_REPLY_LOG = "mentions_reply_log.json"
+MENTIONS_RATE_LIMIT_FILE = "last_mentions_check.txt"     #limit for free tier
+
+
 RETENTION_DAYS = 10  # Remove news older than 10 days
-TWEET_THRESHOLD = 9 # Define score threshold for tweets
+TWEET_THRESHOLD = 9 # NEWS scoring threshold - Define score threshold for tweets
 
 # Random tweets probabilities — UPDATED
 RANDOM_NEWS = 0
@@ -106,6 +112,7 @@ STAT_TWEETS_LIMIT = 1  # Max statistical tweets per day
 INFRA_TWEETS_LIMIT= 1
 CRYPTO_TWEETS_LIMIT= 1
 REPLY_TWEETS_LIMIT = 3
+MENTIONS_REPLY_DAILY_LIMIT = 2
 
 # Daily limits for retweets/quotes (adjust as needed)
 DAILY_QUOTE_LIMIT = 1
@@ -193,7 +200,7 @@ def save_processed_articles(processed):
         print(f"❌ Error writing to JSON: {e}")
         return  # Stop execution if writing fails
         
-#HELPER FOR QUOTE REPOST / REPOST / LIKES
+# HELPER FOR QUOTE REPOST / REPOST / LIKES
 def load_target_tweets():
     if os.path.exists(TARGET_TWEETS_LOG):
         try:
@@ -213,6 +220,41 @@ def cleanup_target_tweets():
     cleaned = {tid: entry for tid, entry in data.items() if entry.get("date", "0000-00-00") >= cutoff}
     save_target_tweets(cleaned)
     return cleaned
+
+# HELPER FOR REPLY MENTION
+def load_mentions_reply_log():
+    if os.path.exists(MENTIONS_REPLY_LOG):
+        try:
+            with open(MENTIONS_REPLY_LOG, "r") as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def save_mentions_reply_log(data):
+    try:
+        with open(MENTIONS_REPLY_LOG, "w") as f:
+            json.dump(data, f, indent=4)
+        print(f"Saved {MENTIONS_REPLY_LOG}")
+    except Exception as e:
+        print(f"Failed to save {MENTIONS_REPLY_LOG}: {e}")
+
+# Check if we can fetch mentions (Free tier: 1 request every 15 minutes)
+def can_check_mentions():
+    if not os.path.exists(MENTIONS_RATE_LIMIT_FILE):
+        return True
+    try:
+        last_check = float(open(MENTIONS_RATE_LIMIT_FILE).read().strip())
+        return time.time() - last_check >= 900  # 15 minutes = 900 seconds
+    except:
+        return True
+
+def update_mentions_timestamp():
+    try:
+        with open(MENTIONS_RATE_LIMIT_FILE, "w") as f:
+            f.write(str(time.time()))
+    except Exception as e:
+        print(f"Failed to update mentions timestamp: {e}")
 
 # Consolidated randomness function for post type
 def select_tweet_type():
@@ -242,7 +284,11 @@ def count_crypto_tweets_today(processed_articles):
 def count_engagement_action(data, action):
     today = datetime.utcnow().strftime("%Y-%m-%d")
     return sum(1 for entry in data.values() if entry.get("date") == today and entry.get("action") == action)
-    
+
+# Count how many real @-mention replies we made today
+def count_mentions_replies_today():
+    log = load_mentions_reply_log()
+    return count_today(log)  # Reuses your existing count_today() — safe and clean
 
 
 # =========================================================
@@ -719,18 +765,8 @@ def reply_to_random_tweet():
 
 
 # =========================================================
-#             SMART MENTIONS ENGAGEMENT (Quote/RT/Like)
+#             TARGET ENGAGEMENT (Quote/RT/Like)
 # =========================================================
-
-def load_engagement_log():
-    if os.path.exists(MENTIONS_LOG_FILE):
-        try: return json.load(open(MENTIONS_LOG_FILE))
-        except: return {}
-    return {}
-
-def save_engagement_log(data):
-    with open(MENTIONS_LOG_FILE, "w") as f:
-        json.dump(data, f, indent=4)
 
 def classify_mention_relevance(text):
     client = openai.OpenAI(api_key=XAI_API_KEY, base_url="https://api.x.ai/v1")
@@ -855,6 +891,84 @@ def process_mention_engagement():
     
 
 # =========================================================
+#         3. REAL @-MENTION → ALWAYS REPLY (Separate & Guaranteed)
+# =========================================================
+
+MY_USER_ID = None
+
+def get_my_user_id():
+    global MY_USER_ID
+    if MY_USER_ID:
+        return MY_USER_ID
+    try:
+        MY_USER_ID = twitter_client.get_me().data.id
+        print(f"My user ID: {MY_USER_ID}")
+        return MY_USER_ID
+    except:
+        return None
+
+def can_check_mentions():
+    if not os.path.exists(MENTIONS_RATE_LIMIT_FILE):
+        return True
+    try:
+        last = float(open(MENTIONS_RATE_LIMIT_FILE).read().strip())
+        return time.time() - last >= 900  # 15 minutes
+    except:
+        return True
+
+def update_mentions_timestamp():
+    with open(MENTIONS_RATE_LIMIT_FILE, "w") as f:
+        f.write(str(time.time()))
+
+def process_mention_replies():
+    if not can_check_mentions():
+        print("Mentions check skipped (15-min rate limit)")
+        return
+
+    user_id = get_my_user_id()
+    if not user_id:
+        return
+
+    try:
+        resp = twitter_client.get_users_mentions(id=user_id, max_results=10, tweet_fields=["author_id"])
+        update_mentions_timestamp()
+    except Exception as e:
+        print(f"Failed to fetch mentions: {e}")
+        return
+
+    mentions = resp.data or []
+    log = load_json(MENTIONS_REPLY_LOG)
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+
+    if count_today(log) >= MENTIONS_REPLY_DAILY_LIMIT:
+        return
+
+    for tweet in mentions:
+        tid = str(tweet.id)
+        if tid in log or tweet.author_id == user_id:
+            continue
+
+        reply_text = openai.OpenAI(api_key=XAI_API_KEY, base_url="https://api.x.ai/v1").chat.completions.create(
+            model=XAI_MODEL,
+            messages=[{"role": "user", "content": f"You are a helpful construction & infrastructure expert. Reply naturally and professionally (under 280 chars, no hashtags, no @):\n\n\"{tweet.text}\""}],
+            max_tokens=180
+        ).choices[0].message.content.strip()
+
+        if not reply_text or len(reply_text) > 280:
+            continue
+
+        try:
+            twitter_client.create_tweet(text=reply_text, in_reply_to_tweet_id=tweet.id)
+            log[tid] = {"date": today, "replied": True, "text": reply_text}
+            save_json(MENTIONS_REPLY_LOG, log)
+            print(f"Replied to @-mention: {reply_text[:60]}...")
+            if count_today(log) >= MENTIONS_REPLY_DAILY_LIMIT:
+                break
+        except Exception as e:
+            print(f"Mention reply failed: {e}")
+    
+
+# =========================================================
 #                      POSTING
 # =========================================================
 
@@ -886,6 +1000,9 @@ def post_tweet(tweet):
 
 ############## Main execution starts here ##############
 if __name__ == "__main__":
+    print("Agent started — checking real @-mentions first...")
+    process_mention_replies()
+    
     print("🔍 Loading previously processed articles...")
     processed_articles = load_processed_articles()
     filtered_links = {article["link"] for article in processed_articles if "link" in article} if processed_articles else set()
