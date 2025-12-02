@@ -242,12 +242,41 @@ def save_mentions_reply_log(data):
 # Check if we can fetch mentions (Free tier: 1 request every 15 minutes)
 def can_check_mentions():
     if not os.path.exists(MENTIONS_RATE_LIMIT_FILE):
+        print("DEBUG: No rate limit file exists, allowing check.")
         return True
     try:
         last_check = float(open(MENTIONS_RATE_LIMIT_FILE).read().strip())
-        return time.time() - last_check >= 900  # 15 minutes = 900 seconds
-    except:
+        time_since = time.time() - last_check
+        print(f"DEBUG: Last check {time_since:.0f} seconds ago.")
+        return time_since >= 960  # Increased to 16 min for safety
+    except Exception as e:
+        print(f"DEBUG: Error reading rate limit file: {e}. Allowing check.")
         return True
+
+def process_mention_replies():
+    if not can_check_mentions():
+        print("Mentions check skipped (15-min rate limit)")
+        return
+
+    user_id = get_my_user_id()
+    if not user_id:
+        return
+
+    update_mentions_timestamp()  # Commit timestamp before attempting fetch
+
+    try:
+        resp = bearer_client.get_users_mentions(
+            id=user_id,
+            max_results=10,
+            tweet_fields=["author_id", "text"]
+        )
+        print(f"Fetched {len(resp.data or [])} mentions")
+    except tweepy.errors.TooManyRequests as e:  # Catch 429 specifically
+        print(f"Rate limit hit (429): {e}. Waiting longer next time.")
+        return
+    except Exception as e:
+        print(f"Failed to fetch mentions: {e}")
+        return
 
 def update_mentions_timestamp():
     try:
