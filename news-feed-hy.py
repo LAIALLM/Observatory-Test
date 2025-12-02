@@ -91,8 +91,8 @@ RANDOM_NEWS = 0
 RANDOM_STATISTIC = 0
 RANDOM_INFRASTRUCTURE = 0
 RANDOM_CRYPTO = 0
-RANDOM_REPLY = 0
-RANDOM_ENGAGEMENT = 1   # ← NEW: replaces most of the old "none"
+RANDOM_REPLY = 0.5
+RANDOM_ENGAGEMENT = 0.5   # ← NEW: replaces most of the old "none"
 RANDOM_NONE = 0   # ← now rare, feels realistic
 
 # Random engagement probabilities
