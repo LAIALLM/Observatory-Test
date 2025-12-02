@@ -930,7 +930,7 @@ def process_mention_replies():
         return
 
     try:
-        resp = twitter_client.get_users_mentions(
+        resp = bearer_client.get_users_mentions(
             id=user_id,
             max_results=10,
             tweet_fields=["author_id", "text"]  # ← text is required!
