@@ -44,7 +44,14 @@ twitter_client = tweepy.Client(
 
 # **Accounts to Follow** You can look up IDs with the X API or tools like tweeterid.com. https://twiteridfinder.com/
 TARGET_ACCOUNTS = {
-    "CityLab": "331803536"       # Replace with actual user IDs
+    "sama": "1605",
+    "balajis": "2178012643",
+    "CityLab": "331803536",       # Replace with actual user IDs
+    "PaulG": "183749519",        # Paulg688@hotmail.com
+    "pmarca": "5943622",   # Pmarca77@gmail.com
+    "VitalikButerin": "295218901",
+    "a16z": "64844802", # AZ509@outlook.com
+    "naval": "745273" # Naval999@outlook.com
 }
 
 # How many recent tweets we READ per reply run
