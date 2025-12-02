@@ -643,9 +643,7 @@ def fetch_latest_tweets(user_id, max_results=REPLY_FETCH_LIMIT):
                 continue  # already have it
 
             # Score relevance immediately
-            score = classify_mention_relevance(tweet.text)   # ← use 'score'
-
-             # ←←← FIXED: Define handle here
+            score = classify_mention_relevance(tweet.text)
             handle = next((k for k, v in TARGET_ACCOUNTS.items() if v == user_id), "unknown")
 
             log[tid] = {
@@ -736,11 +734,11 @@ def reply_to_random_tweet():
 
     # # SMART FILTER: with a score over defined and pick the most recent new tweet
     selected_tweet = new_tweets[0]
-    tid = str(selected_tweet.id)
+    tweet_id = selected_tweet.id                  # ← fixed
+    tweet_text = selected_tweet.text              # ← fixed
 
-    # Get the relevance score we just saved in fetch_latest_tweets()
     target_data = load_target_tweets()
-    score = target_data.get(tid, {}).get("relevance_score", 0)
+    score = target_data.get(str(tweet_id), {}).get("relevance_score", 0)
 
     if score <= 4:
         print(f"Skipping reply → low relevance score {score}/10: \"{selected_tweet.text[:80]}...\"")
@@ -768,7 +766,7 @@ def reply_to_random_tweet():
             "username": username,
             "tweet_id": tweet_id,
             "source_text": tweet_text,
-            "reply_text": reply_text
+            "reply_text": reply_text,
             "relevance_score": score
         }
         save_reply_log(reply_log)
