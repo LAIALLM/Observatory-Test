@@ -1,4 +1,4 @@
-name: Auto-Post Construction News HYBRID
+name: X Agent Construction and Infrastructures HYBRID
 
 on:
   schedule:
@@ -35,8 +35,10 @@ jobs:
           [ -f filtered_news.json ]           || echo '[]'  > filtered_news.json
           [ -f replied_tweets.json ]           || echo '{}' > replied_tweets.json
           [ -f target_engagement_tweets.json ] || echo '{}' > target_engagement_tweets.json
+          [ -f mentions_reply_log.json ]       || echo '{}' > mentions_reply_log.json
+          [ -f last_mentions_check.txt ]       || echo "0"   > last_mentions_check.txt
 
-          echo "All log files initialized"
+          echo "All log files initialized successfully"
 
       - name: 🚀 Run Script
         env:
@@ -54,8 +56,12 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git config --global user.name "GitHub Actions"
 
-          # Stage both log files (if they exist)
-          git add filtered_news.json replied_tweets.json target_engagement_tweets.json || true
+          # Add ALL possible log files
+          git add filtered_news.json || true
+          git add replied_tweets.json || true
+          git add target_engagement_tweets.json || true
+          git add mentions_reply_log.json || true
+          git add last_mentions_check.txt || true
 
           # Only commit if something changed
           if git diff --cached --quiet; then
