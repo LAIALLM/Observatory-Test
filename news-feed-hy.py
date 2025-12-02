@@ -734,10 +734,18 @@ def reply_to_random_tweet():
         print(f"🔁 All recent tweets from @{user_to_fetch} already replied to. Skipping this run.")
         return
 
-    # Pick the most recent new tweet
+    # # SMART FILTER: with a score over defined and pick the most recent new tweet
     selected_tweet = new_tweets[0]
-    tweet_id = selected_tweet.id
-    tweet_text = selected_tweet.text
+    tid = str(selected_tweet.id)
+
+    # Get the relevance score we just saved in fetch_latest_tweets()
+    target_data = load_target_tweets()
+    score = target_data.get(tid, {}).get("relevance_score", 0)
+
+    if score <= 4:
+        print(f"Skipping reply → low relevance score {score}/10: \"{selected_tweet.text[:80]}...\"")
+        return
+        
     username = user_to_fetch  # Using stored username
 
     # **Step 4: Generate a Grok-powered reply**
@@ -761,6 +769,7 @@ def reply_to_random_tweet():
             "tweet_id": tweet_id,
             "source_text": tweet_text,
             "reply_text": reply_text
+            "relevance_score": score
         }
         save_reply_log(reply_log)
 
