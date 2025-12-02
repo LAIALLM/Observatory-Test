@@ -930,19 +930,26 @@ def process_mention_replies():
         return
 
     try:
-        resp = twitter_client.get_users_mentions(id=user_id, max_results=10, tweet_fields=["author_id"], user_auth=True)
+        resp = twitter_client.get_users_mentions(
+            id=user_id,
+            max_results=10,
+            tweet_fields=["author_id", "text"]  # ← text is required!
+        )
         update_mentions_timestamp()
+        print(f"Fetched {len(resp.data or [])} mentions")
     except Exception as e:
         print(f"Failed to fetch mentions: {e}")
         return
 
     mentions = resp.data or []
-    log = load_mentions_reply_log()  # ← Your specific function
+    log = load_mentions_reply_log() 
     today = datetime.utcnow().strftime("%Y-%m-%d")
 
-    if count_today(log) >= MENTIONS_REPLY_DAILY_LIMIT:
+    if count_today(log) >= MENTIONS_REPLY_DAILY_LIMIT:  # ← now uses the correct one
+        print(f"Daily mention reply limit reached ({MENTIONS_REPLY_DAILY_LIMIT})")
         return
 
+    replied = 0
     for tweet in mentions:
         tid = str(tweet.id)
         if tid in log or tweet.author_id == user_id:
@@ -966,7 +973,9 @@ def process_mention_replies():
                 break
         except Exception as e:
             print(f"Mention reply failed: {e}")
-    
+
+    if replied:
+        print(f"Completed {replied} mention replies")
 
 # =========================================================
 #                      POSTING
