@@ -106,5 +106,14 @@
         "date": "2025-12-02",
         "relevance_score": 7,
         "action": null
+    },
+    "1995825406578962727": {
+        "tweet_id": "1995825406578962727",
+        "text": "What we know about Hong Kong's deadly fire https://t.co/tQ9NDfPYWZ",
+        "author_id": "331803536",
+        "author_handle": "CityLab",
+        "date": "2025-12-02",
+        "relevance_score": 3,
+        "action": null
     }
 }
