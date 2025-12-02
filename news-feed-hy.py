@@ -286,7 +286,7 @@ def count_engagement_action(data, action):
     return sum(1 for entry in data.values() if entry.get("date") == today and entry.get("action") == action)
 
 # Count how many real @-mention replies we made today
-def count_mentions_replies_today():
+def count_mentions_replies_today(log):
     today = datetime.utcnow().strftime("%Y-%m-%d")
     return sum(1 for entry in log.values() if entry.get("date") == today)
 
