@@ -930,7 +930,7 @@ def process_mention_replies():
         return
 
     try:
-        resp = twitter_client.get_users_mentions(id=user_id, max_results=10, tweet_fields=["author_id"])
+        resp = twitter_client.get_users_mentions(id=user_id, max_results=10, tweet_fields=["author_id"], user_auth=True)
         update_mentions_timestamp()
     except Exception as e:
         print(f"Failed to fetch mentions: {e}")
