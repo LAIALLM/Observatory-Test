@@ -937,7 +937,7 @@ def process_mention_replies():
         return
 
     mentions = resp.data or []
-    log = load_json(MENTIONS_REPLY_LOG)
+    log = load_mentions_reply_log()  # ← Your specific function
     today = datetime.utcnow().strftime("%Y-%m-%d")
 
     if count_today(log) >= MENTIONS_REPLY_DAILY_LIMIT:
