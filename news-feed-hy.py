@@ -960,7 +960,7 @@ def process_mention_replies():
         try:
             twitter_client.create_tweet(text=reply_text, in_reply_to_tweet_id=tweet.id)
             log[tid] = {"date": today, "replied": True, "text": reply_text}
-            save_json(MENTIONS_REPLY_LOG, log)
+            save_mentions_reply_log(log)
             print(f"Replied to @-mention: {reply_text[:60]}...")
             if count_today(log) >= MENTIONS_REPLY_DAILY_LIMIT:
                 break
