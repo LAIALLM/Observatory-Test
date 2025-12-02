@@ -287,8 +287,8 @@ def count_engagement_action(data, action):
 
 # Count how many real @-mention replies we made today
 def count_mentions_replies_today():
-    log = load_mentions_reply_log()
-    return count_today(log)  # Reuses your existing count_today() — safe and clean
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    return sum(1 for entry in log.values() if entry.get("date") == today)
 
 
 # =========================================================
@@ -945,7 +945,7 @@ def process_mention_replies():
     log = load_mentions_reply_log() 
     today = datetime.utcnow().strftime("%Y-%m-%d")
 
-    if count_today(log) >= MENTIONS_REPLY_DAILY_LIMIT:  # ← now uses the correct one
+    if count_mentions_replies_today(log) >= MENTIONS_REPLY_DAILY_LIMIT:  # ← now uses the correct one
         print(f"Daily mention reply limit reached ({MENTIONS_REPLY_DAILY_LIMIT})")
         return
 
@@ -969,7 +969,7 @@ def process_mention_replies():
             log[tid] = {"date": today, "replied": True, "text": reply_text}
             save_mentions_reply_log(log)
             print(f"Replied to @-mention: {reply_text[:60]}...")
-            if count_today(log) >= MENTIONS_REPLY_DAILY_LIMIT:
+            if count_mentions_replies_today(log) >= MENTIONS_REPLY_DAILY_LIMIT:
                 break
         except Exception as e:
             print(f"Mention reply failed: {e}")
