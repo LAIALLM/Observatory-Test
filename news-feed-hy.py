@@ -46,7 +46,6 @@ twitter_client = tweepy.Client(
 TARGET_ACCOUNTS = {
     "sama": "1605",
     "balajis": "2178012643",
-    "CityLab": "331803536",       # Replace with actual user IDs
     "PaulG": "183749519",        # Paulg688@hotmail.com
     "pmarca": "5943622",   # Pmarca77@gmail.com
     "VitalikButerin": "295218901",
