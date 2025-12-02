@@ -776,19 +776,18 @@ def classify_mention_relevance(text):
     client = openai.OpenAI(api_key=XAI_API_KEY, base_url="https://api.x.ai/v1")
     
     prompt = f"""
-    You are scoring tweets for a construction & infrastructure-focused X account.
-    Assign a relevance score from 0 to 10 (integer only) based on how directly it relates to physical or digital infrastructure.
-
-    Scoring rules:
-    - 9–10: Major real-world projects (tunnels, bridges, airports, railways, highways, gigafactories, AI data centers, undersea cables, power plants, dams)
-    - 7–8: Confirmed medium-scale projects, expansions, or specific infrastructure investments
-    - 5–6: General but relevant discussion (housing crisis driving construction, data center demand, smart cities, zoning, permitting)
-    - 1–4: Vague, speculative, or only loosely related
-    - 0: Completely off-topic (sports, entertainment, pure software, memes, politics without infra)
-
-    Reply only with a single integer 0–10. No explanation.
-
-    Tweet: "{text}"
+    Score 0–10 (integer only) for LAIA.org — focused on tech and next generation urban infrastructure (2025–2050).
+    
+    10 = Physical infra built for frontier tech (AI superclusters, robotics hubs, undersea cables, data centers, nuclear for compute, blockchain land registries deployed)
+    9  = Confirmed large-scale tech-infra projects/investments
+    8  = Emerging tech reshaping cities (construction robots, drone vertiports, digital twins, tokenized real estate)
+    7  = Strong tech ↔ infra bottleneck/opportunity discussion
+    5–6 = General smart-city / data-center / climate-tech infra talk
+    1–4 = Vague or traditional construction/tech without urban-physical link
+    0 = Off-topic, memes, one-word replies, “yes”, “gm”, etc.
+    
+    Tweet: \"{text}\"
+    Reply ONLY the number.
     """
 
     try:
