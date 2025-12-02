@@ -253,31 +253,6 @@ def can_check_mentions():
         print(f"DEBUG: Error reading rate limit file: {e}. Allowing check.")
         return True
 
-def process_mention_replies():
-    if not can_check_mentions():
-        print("Mentions check skipped (15-min rate limit)")
-        return
-
-    user_id = get_my_user_id()
-    if not user_id:
-        return
-
-    update_mentions_timestamp()  # Commit timestamp before attempting fetch
-
-    try:
-        resp = bearer_client.get_users_mentions(
-            id=user_id,
-            max_results=10,
-            tweet_fields=["author_id", "text"]
-        )
-        print(f"Fetched {len(resp.data or [])} mentions")
-    except tweepy.errors.TooManyRequests as e:  # Catch 429 specifically
-        print(f"Rate limit hit (429): {e}. Waiting longer next time.")
-        return
-    except Exception as e:
-        print(f"Failed to fetch mentions: {e}")
-        return
-
 def update_mentions_timestamp():
     try:
         with open(MENTIONS_RATE_LIMIT_FILE, "w") as f:
@@ -920,7 +895,7 @@ def process_mention_engagement():
     
 
 # =========================================================
-#         3. REAL @-MENTION → ALWAYS REPLY (Separate & Guaranteed)
+#         REAL @-MENTION → ALWAYS REPLY (Separate & Guaranteed)
 # =========================================================
 
 MY_USER_ID = None
@@ -936,19 +911,6 @@ def get_my_user_id():
     except:
         return None
 
-def can_check_mentions():
-    if not os.path.exists(MENTIONS_RATE_LIMIT_FILE):
-        return True
-    try:
-        last = float(open(MENTIONS_RATE_LIMIT_FILE).read().strip())
-        return time.time() - last >= 900  # 15 minutes
-    except:
-        return True
-
-def update_mentions_timestamp():
-    with open(MENTIONS_RATE_LIMIT_FILE, "w") as f:
-        f.write(str(time.time()))
-
 def process_mention_replies():
     if not can_check_mentions():
         print("Mentions check skipped (15-min rate limit)")
@@ -958,21 +920,38 @@ def process_mention_replies():
     if not user_id:
         return
 
+    log = load_mentions_reply_log()
+    since_id = log.get('metadata', {}).get('last_mention_id')
+
+    update_mentions_timestamp()  # Commit before fetch
+
     try:
         resp = bearer_client.get_users_mentions(
             id=user_id,
             max_results=10,
-            tweet_fields=["author_id", "text"]  # ← text is required!
+            tweet_fields=["author_id", "text"],
+            since_id=since_id
         )
-        update_mentions_timestamp()
         print(f"Fetched {len(resp.data or [])} mentions")
+    except tweepy.errors.TooManyRequests as e:
+        print(f"Rate limit hit (429): {e}. Waiting longer next time.")
+        return
     except Exception as e:
         print(f"Failed to fetch mentions: {e}")
         return
 
     mentions = resp.data or []
-    log = load_mentions_reply_log() 
     today = datetime.utcnow().strftime("%Y-%m-%d")
+
+    # Update metadata with max ID from this fetch (even if no replies)
+    if mentions:
+        new_max = max(int(tweet.id) for tweet in mentions)
+        current_max = since_id or 0
+        updated_max = max(current_max, new_max)
+        if 'metadata' not in log:
+            log['metadata'] = {}
+        log['metadata']['last_mention_id'] = updated_max
+        save_mentions_reply_log(log)  # Save updated max early
 
     if count_mentions_replies_today(log) >= MENTIONS_REPLY_DAILY_LIMIT:  # ← now uses the correct one
         print(f"Daily mention reply limit reached ({MENTIONS_REPLY_DAILY_LIMIT})")
