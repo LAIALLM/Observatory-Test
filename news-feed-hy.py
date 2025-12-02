@@ -805,10 +805,29 @@ def classify_mention_relevance(text):
 
 def generate_quote_comment(text):
     client = openai.OpenAI(api_key=XAI_API_KEY, base_url="https://api.x.ai/v1")
-    prompt = f"Write a sharp, professional quote tweet (max 180 chars) adding construction/infra value. No hashtags, no @, no emojis except flags.\nOriginal: {text}"
+    
+    prompt = f"""
+    Write a sharp, professional quote tweet (max 180 chars) that adds a precise insight or data point to the original tweet.
+    
+    Rules:
+    - Generate a **concise, data-driven insight** that adds a relevant statistic or fact. 
+    - No hashtags, no @-mentions, no generic emojis (flags OK)
+    - Sound forward-looking and authoritative
+    - Never generic — always add a concrete angle or number when possible
+    
+    Original tweet: {text}
+    
+    Quote comment only:"""
+
     try:
-        resp = client.chat.completions.create(model=XAI_MODEL, messages=[{"role": "user", "content": prompt}], max_tokens=100, temperature=0.7)
-        return resp.choices[0].message.content.strip()[:180]
+        resp = client.chat.completions.create(
+            model=XAI_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=100,
+            temperature=0.65
+        )
+        comment = resp.choices[0].message.content.strip()
+        return comment[:180] if comment else None
     except:
         return None
 
