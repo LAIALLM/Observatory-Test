@@ -694,21 +694,18 @@ def generate_grok_reply(tweet_text, username):
 
     **Tweet:** "{tweet_text}"
 
-    **Your Reply:**
+    Reply directly with only the final tweet text, nothing else:
     """
 
-    client = openai.OpenAI(
-        api_key=XAI_API_KEY,  # Using xAI API key
-        base_url="https://api.x.ai/v1"  # xAI endpoint
-    )
-
+    client = openai.OpenAI(api_key=XAI_API_KEY, base_url="https://api.x.ai/v1")
     response = client.chat.completions.create(
         model=XAI_MODEL,
-        messages=[{"role": "user", "content": prompt}]
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.7,
+        max_tokens=300
     )
-
     return response.choices[0].message.content.strip()
-
+    
 def reply_to_random_tweet():
     """ Randomly select a user, fetch their latest tweet, and reply once per tweet. """
     reply_log = load_reply_log()
