@@ -46,6 +46,8 @@ twitter_client = tweepy.Client(
 TARGET_ACCOUNTS = {
     "sama": "1605",
     "balajis": "2178012643",
+    "elonmusk": "44196397",   
+    "stats_feed": "1335132884278108161",
     "PaulG": "183749519",        # Paulg688@hotmail.com
     "pmarca": "5943622",   # Pmarca77@gmail.com
     "VitalikButerin": "295218901",
@@ -78,14 +80,14 @@ QUOTE_MIN_SCORE = 6   # 9–10 → Quote with AI comment
 REPOST_MIN_SCORE = 4   # 7–10 → Native repost
 LIKE_MIN_SCORE = 3   # 5–10 → Like (or everything if you want)
 
-# Random tweets probabilities — UPDATED
-RANDOM_NEWS = 0
-RANDOM_STATISTIC = 0
-RANDOM_INFRASTRUCTURE = 0
-RANDOM_CRYPTO = 0
-RANDOM_REPLY = 0.5
-RANDOM_ENGAGEMENT = 0.5   # ← NEW: replaces most of the old "none"
-RANDOM_NONE = 0   # ← now rare, feels realistic
+# Random tweets probabilities 
+RANDOM_NEWS = 0.2
+RANDOM_STATISTIC = 0.1
+RANDOM_INFRASTRUCTURE = 0.1
+RANDOM_CRYPTO = 0.1
+RANDOM_REPLY = 0.2
+RANDOM_ENGAGEMENT = 0.2   
+RANDOM_NONE = 0.1   
 
 # Random engagement probabilities
 ENGAGEMENT_QUOTE_WEIGHT    = 0.5   # ← 85% chance to QUOTE (with AI comment)
@@ -97,8 +99,8 @@ NEWS_TWEETS_LIMIT = 3  # Max news tweets per day
 STAT_TWEETS_LIMIT = 1  # Max statistical tweets per day
 INFRA_TWEETS_LIMIT= 1
 CRYPTO_TWEETS_LIMIT= 1
-REPLY_TWEETS_LIMIT = 3
-MENTIONS_REPLY_DAILY_LIMIT = 8
+REPLY_TWEETS_LIMIT = 1
+MENTIONS_REPLY_DAILY_LIMIT = 6
 
 # Daily limits for retweets/quotes (adjust as needed)
 DAILY_QUOTE_LIMIT = 1
@@ -998,6 +1000,11 @@ def process_mention_replies():
     for tweet in mentions:
         tid = str(tweet.id)
         if tid in log or tweet.author_id == user_id:
+            continue
+
+        # Blocks: crypto spam (50+ tags) + Grok/Claude/Gemini replies (2 tags) + any mass-tag nonsense
+        if len(re.findall(r'@\w+', tweet.text)) > 1:
+            print(f"Blocked mention with multiple @ tags ({tweet.text[:100]}...)")
             continue
 
         reply_text = openai.OpenAI(api_key=XAI_API_KEY, base_url="https://api.x.ai/v1").chat.completions.create(
