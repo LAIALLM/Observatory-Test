@@ -752,7 +752,7 @@ def reply_to_random_tweet():
     target_data = load_target_tweets()
     score = target_data.get(str(tweet_id), {}).get("relevance_score", 0)
 
-    if score <= 4:
+    if score <= REPLY_MIN_SCORE:
         print(f"Skipping reply → low relevance score {score}/10: \"{selected_tweet.text[:80]}...\"")
         return
         
