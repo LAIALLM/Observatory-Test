@@ -842,8 +842,8 @@ def generate_quote_comment(text):
         resp = client.chat.completions.create(
             model=XAI_MODEL,
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=100,
-            temperature=0.7
+            max_tokens=110,
+            temperature=0.8
         )
         comment = resp.choices[0].message.content.strip()
         return comment[:180] if comment else None
