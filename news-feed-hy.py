@@ -56,47 +56,27 @@ TARGET_ACCOUNTS = {
 # How many recent tweets we READ per reply run
 REPLY_FETCH_LIMIT = 5  # 5 minimum enforced by X
 
-# =========================================================
-#                         RSS
-# =========================================================
-
-# Google News + Industry-Specific RSS Feeds
-RSS_FEEDS = [
-    
-    # Google News Feeds – WORLD / GLOBAL English edition
-    # Using hl=en-001 (English – World) and US edition as a neutral-ish global proxy
-    "https://news.google.com/rss/search?q=construction+industry&hl=en-001&gl=US&ceid=US:en",
-    "https://news.google.com/rss/search?q=infrastructure&hl=en-001&gl=US&ceid=US:en",
-    "https://news.google.com/rss/search?q=urban+development&hl=en-001&gl=US&ceid=US:en",
-    "https://news.google.com/rss/search?q=smart+city&hl=en-001&gl=US&ceid=US:en",
-    "https://news.google.com/rss/search?q=new+city+urban+development&hl=en-001&gl=US&ceid=US:en",
-
-    # Industry-Specific Construction & Infrastructure News Feeds
-    "https://www.constructiondive.com/feeds/news/",  # Construction Dive
-    "https://www.enr.com/rss/articles",  # Engineering News-Record (ENR)
-    "https://www.archdaily.com/rss",  # ArchDaily (Architecture & Urbanism)
-    "https://nextcity.org/feeds/features",  # Next City (Urban Planning & Development)
-    "https://www.smartcitiesdive.com/feeds/news/",  # Smart Cities World (Tech & Development)
-    "https://www.urbantransportnews.com/feed",  # Urban Transport News
-    "https://infrastructuremagazine.com.au/feed/",  # Infrastructure Intelligence
-]
 
 # =========================================================
 #                     STORAGE + LIMITS
 # =========================================================
 
-# Log file to track posted and filtered news
+# Log files to track tweets and news
 LOG_FILE = "filtered_news.json"
 REPLY_LOG_FILE = "replied_tweets.json"
 TARGET_TWEETS_LOG = "target_engagement_tweets.json" 
 
-# Dedicated log for real @-mention replies
 MENTIONS_REPLY_LOG = "mentions_reply_log.json"
 MENTIONS_RATE_LIMIT_FILE = "last_mentions_check.txt"     #limit for free tier
 
-
 RETENTION_DAYS = 10  # Remove news older than 10 days
-TWEET_THRESHOLD = 9 # NEWS scoring threshold - Define score threshold for tweets
+
+#SCORING
+NEWS_MIN_SCORE = 9   # Minimum score to tweet news
+REPLY_MIN_SCORE = 2   # Minimum score to reply to a target account tweet
+QUOTE_MIN_SCORE = 6   # 9–10 → Quote with AI comment
+REPOST_MIN_SCORE = 4   # 7–10 → Native repost
+LIKE_MIN_SCORE = 3   # 5–10 → Like (or everything if you want)
 
 # Random tweets probabilities — UPDATED
 RANDOM_NEWS = 0
@@ -124,6 +104,32 @@ MENTIONS_REPLY_DAILY_LIMIT = 8
 DAILY_QUOTE_LIMIT = 1
 DAILY_REPOST_LIMIT = 2
 DAILY_LIKE_LIMIT = 0   # Very safe
+
+
+# =========================================================
+#                         RSS
+# =========================================================
+
+# Google News + Industry-Specific RSS Feeds
+RSS_FEEDS = [
+    
+    # Google News Feeds – WORLD / GLOBAL English edition
+    # Using hl=en-001 (English – World) and US edition as a neutral-ish global proxy
+    "https://news.google.com/rss/search?q=construction+industry&hl=en-001&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=infrastructure&hl=en-001&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=urban+development&hl=en-001&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=smart+city&hl=en-001&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=new+city+urban+development&hl=en-001&gl=US&ceid=US:en",
+
+    # Industry-Specific Construction & Infrastructure News Feeds
+    "https://www.constructiondive.com/feeds/news/",  # Construction Dive
+    "https://www.enr.com/rss/articles",  # Engineering News-Record (ENR)
+    "https://www.archdaily.com/rss",  # ArchDaily (Architecture & Urbanism)
+    "https://nextcity.org/feeds/features",  # Next City (Urban Planning & Development)
+    "https://www.smartcitiesdive.com/feeds/news/",  # Smart Cities World (Tech & Development)
+    "https://www.urbantransportnews.com/feed",  # Urban Transport News
+    "https://infrastructuremagazine.com.au/feed/",  # Infrastructure Intelligence
+]
 
 # =========================================================
 #                        HELPERS
@@ -155,7 +161,7 @@ def is_similar_news(new_title, new_summary, processed_articles, threshold=0.6, l
     # ✅ Fix: Ensure scores are valid numbers before filtering
     recent_articles = [article for article in processed_articles 
                        if isinstance(article.get("score", 0), (int, float)) 
-                       and article.get("score", 0) >= TWEET_THRESHOLD][-limit:]
+                       and article.get("score", 0) >= NEWS_MIN_SCORE][-limit:]
 
     for article in recent_articles:
         old_keywords = extract_key_terms(article.get("tweet", "")) | extract_key_terms(article.get("title", "")) | extract_key_terms(article.get("summary", ""))
@@ -872,8 +878,8 @@ def process_mention_engagement():
         text = entry["text"]
         score = entry.get("relevance_score", 0)  # Use pre-scored value
 
-        # QUOTE: only 9–10
-        if (action == "quote" and score >= 9 and 
+        # QUOTE:
+        if (action == "quote" and score >= QUOTE_MIN_SCORE and 
             count_engagement_action(data, "quote") < DAILY_QUOTE_LIMIT):
             comment = generate_quote_comment(text)
             if comment and 15 < len(comment) < 200:
@@ -893,7 +899,7 @@ def process_mention_engagement():
                     print(f"Quote failed: {e}")
 
         # REPOST: 7–10
-        elif (action == "repost" and score >= 7 and 
+        elif (action == "repost" and score >= REPOST_MIN_SCORE and 
               count_engagement_action(data, "repost") < DAILY_REPOST_LIMIT):
             try:
                 twitter_client.retweet(tweet_id=int(tid))  # ← This always works
@@ -908,7 +914,7 @@ def process_mention_engagement():
                 print(f"Repost failed: {e}")
 
         # LIKE: 5–10 (or everything if like mode)
-        elif (action == "like" and score >= 5 and 
+        elif (action == "like" and score >= LIKE_MIN_SCORE and 
               count_engagement_action(data, "like") < DAILY_LIKE_LIMIT):
             try:
                 twitter_client.like(tweet_id=int(tid))
@@ -1140,7 +1146,7 @@ if __name__ == "__main__":
             }
 
             # ✅ Generate tweet only if score meets threshold
-            if score >= TWEET_THRESHOLD:
+            if score >= NEWS_MIN_SCORE:
                 article_entry["tweet"] = summarize_news(title, summary, source)
 
             processed_articles.append(article_entry)
@@ -1155,7 +1161,7 @@ if __name__ == "__main__":
         new_entries = []
 
         for score, title, link, source, summary in top_articles:
-            if score >= TWEET_THRESHOLD:
+            if score >= NEWS_MIN_SCORE:
                 tweet = summarize_news(title, summary, source)
 
                 if post_tweet(tweet):
