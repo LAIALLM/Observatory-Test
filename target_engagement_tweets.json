@@ -295,5 +295,50 @@
         "date": "2025-12-03",
         "relevance_score": 0,
         "action": null
+    },
+    "1995209899182375024": {
+        "tweet_id": "1995209899182375024",
+        "text": "You can just build on L1. https://t.co/fYVIIjQpsA",
+        "author_id": "295218901",
+        "author_handle": "VitalikButerin",
+        "date": "2025-12-03",
+        "relevance_score": 0,
+        "action": null
+    },
+    "1995063062165135675": {
+        "tweet_id": "1995063062165135675",
+        "text": "I hope Zcash resists the dark hand of token voting.\n\nToken voting is bad in all kinds of ways (see https://t.co/Cvl7CFVgtc ); I think it's worse than Zcash's status quo.\n\nPrivacy is exactly the sort of thing that will erode over time if left to the median token holder. https://t.co/NbRqGLOrpj",
+        "author_id": "295218901",
+        "author_handle": "VitalikButerin",
+        "date": "2025-12-03",
+        "relevance_score": 0,
+        "action": null
+    },
+    "1993803663026860125": {
+        "tweet_id": "1993803663026860125",
+        "text": "Encrypted messaging, like @signalapp, is critical for preserving our digital privacy. Two important next steps for the space are (i) permissionless account creation and (ii) metadata privacy.\n\n@session_app and @SimpleXChat are two messaging apps pushing these directions forward.",
+        "author_id": "295218901",
+        "author_handle": "VitalikButerin",
+        "date": "2025-12-03",
+        "relevance_score": 0,
+        "action": null
+    },
+    "1993676603482923334": {
+        "tweet_id": "1993676603482923334",
+        "text": "See https://t.co/iom1VHW2zt for the EIPs being worked on right now, including many of the possible gas repricing EIPs for Glamsterdam or H*",
+        "author_id": "295218901",
+        "author_handle": "VitalikButerin",
+        "date": "2025-12-03",
+        "relevance_score": 2,
+        "action": null
+    },
+    "1993676389812232490": {
+        "tweet_id": "1993676389812232490",
+        "text": "Expect continued growth but more targeted / less uniform growth for next year.\n\neg. one possible future is: 5x gas limit increase together with 5x gas cost increase for operations that are relatively inefficient to process\n\nPotential targets for such increases (my current view): https://t.co/FkiTxJnEAq",
+        "author_id": "295218901",
+        "author_handle": "VitalikButerin",
+        "date": "2025-12-03",
+        "relevance_score": 1,
+        "action": null
     }
 }
