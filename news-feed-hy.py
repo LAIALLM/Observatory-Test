@@ -843,7 +843,7 @@ def generate_quote_comment(text):
             model=XAI_MODEL,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=100,
-            temperature=0.65
+            temperature=0.7
         )
         comment = resp.choices[0].message.content.strip()
         return comment[:180] if comment else None
@@ -1002,8 +1002,25 @@ def process_mention_replies():
 
         reply_text = openai.OpenAI(api_key=XAI_API_KEY, base_url="https://api.x.ai/v1").chat.completions.create(
             model=XAI_MODEL,
-            messages=[{"role": "user", "content": f"You are a helpful construction & infrastructure expert. Reply naturally and professionally (under 280 chars, no hashtags, no @):\n\n\"{tweet.text}\""}],
-            max_tokens=180
+            messages=[{
+                "role": "user",
+                "content": f"""
+        You are @YourHandle — a construction & next-gen infrastructure account.
+        
+        Someone just @-mentioned you with this:
+        
+        "{tweet.text}"
+        
+        Write a concise, natural, professional reply (max 240 chars).
+        - No hashtags, no @-mentions (X adds them automatically)
+        - No generic emojis (country flags OK)
+        - Sound helpful and slightly forward-looking
+        
+        Reply directly with only the final reply text, nothing else:
+        """
+            }],
+            temperature=0.7,
+            max_tokens=300
         ).choices[0].message.content.strip()
 
         if not reply_text or len(reply_text) > 280:
