@@ -160,5 +160,50 @@
         "date": "2025-12-03",
         "relevance_score": 0,
         "action": null
+    },
+    "1995547485012423111": {
+        "tweet_id": "1995547485012423111",
+        "text": "David Sacks really understands AI and cares about the US leading in innovation. I am grateful we have him. https://t.co/6I0PCjtmjH",
+        "author_id": "1605",
+        "author_handle": "sama",
+        "date": "2025-12-03",
+        "relevance_score": 0,
+        "action": null
+    },
+    "1992385855349248258": {
+        "tweet_id": "1992385855349248258",
+        "text": "It has been amazing to watch the progress of the Codex team; they are beasts.\n\nThe product/model is already so good and will get much better; I believe they will create the best and most important product in the space, and enable so much downstream work.",
+        "author_id": "1605",
+        "author_handle": "sama",
+        "date": "2025-12-03",
+        "relevance_score": 0,
+        "action": null
+    },
+    "1991597415888220596": {
+        "tweet_id": "1991597415888220596",
+        "text": "A first preview of something we expect to see a lot more of soon: https://t.co/IOqf0tF7TB",
+        "author_id": "1605",
+        "author_handle": "sama",
+        "date": "2025-12-03",
+        "relevance_score": 0,
+        "action": null
+    },
+    "1991258606168338444": {
+        "tweet_id": "1991258606168338444",
+        "text": "New Codex model is a significant improvement! https://t.co/UqOHJXJLMK",
+        "author_id": "1605",
+        "author_handle": "sama",
+        "date": "2025-12-03",
+        "relevance_score": 0,
+        "action": null
+    },
+    "1990828659981144462": {
+        "tweet_id": "1990828659981144462",
+        "text": "Congrats to Google on Gemini 3! Looks like a great model.",
+        "author_id": "1605",
+        "author_handle": "sama",
+        "date": "2025-12-03",
+        "relevance_score": 0,
+        "action": null
     }
 }
