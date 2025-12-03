@@ -795,18 +795,21 @@ def classify_mention_relevance(text):
     client = openai.OpenAI(api_key=XAI_API_KEY, base_url="https://api.x.ai/v1")
     
     prompt = f"""
-    Score 0–10 (integer only) for LAIA.org — focused on tech and next generation urban infrastructure (2025–2050).
+    Score 0–10 (integer only) for LAIA.org — an account obsessed with how frontier technology (especially AI, robotics, crypto, biotech) physically reshapes cities and infrastructure between 2025–2050. We want to build relationships with founders, VCs, and thinkers in the broader frontier-tech + physical-world stack.
     
-    10 = Physical infra built for frontier tech (AI superclusters, robotics hubs, undersea cables, data centers, nuclear for compute, blockchain land registries deployed)
-    9  = Confirmed large-scale tech-infra projects/investments
-    8  = Emerging tech reshaping cities (construction robots, drone vertiports, digital twins, tokenized real estate)
-    7  = Strong tech ↔ infra bottleneck/opportunity discussion
-    5–6 = General smart-city / data-center / climate-tech infra talk
-    1–4 = Vague or traditional construction/tech without urban-physical link
-    0 = Off-topic, memes, one-word replies, “yes”, “gm”, etc.
+    10 = Physical AI/Frontier-tech infra being built (superclusters, GW data centers, SMRs, robotics factories, vertiports, tokenized RWA, future construction)
+    9 = Big announced tech-infra projects (xAI Colossus, AI cities, chip fabs)
+    8 = Construction/energy/robotics tech clearly reshaping cities (humanoid deployment, autonomous excavators, fusion pilot plants, urban air mobility infrastructure)
+    7 = Tech ↔ infra bottleneck discussion (power, land, regulation)
+    6 = Data centers, nuclear/renewables, smart cities, urban mobility
+    5 = General AI/energy/robotics/construction news that could matter
+    4 = Adjacent VC/founder/tech chatter (scaling laws, startup theses)
+    3 = Light memes/hot takes from target accounts – still worth a reply
+    2 = Off-topic but not trash
+    0–1 = gm/gn, one-word, pure spam
     
     Tweet: \"{text}\"
-    Reply ONLY the number.
+    Answer with only the number 0–10.
     """
 
     try:
