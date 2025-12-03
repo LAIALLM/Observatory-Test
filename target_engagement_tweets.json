@@ -115,5 +115,50 @@
         "date": "2025-12-02",
         "relevance_score": 3,
         "action": null
+    },
+    "1995443913126256683": {
+        "tweet_id": "1995443913126256683",
+        "text": "Creation manifests through those who want it badly enough.",
+        "author_id": "745273",
+        "author_handle": "naval",
+        "date": "2025-12-03",
+        "relevance_score": 0,
+        "action": null
+    },
+    "1995426057428881808": {
+        "tweet_id": "1995426057428881808",
+        "text": "There are lies, damned lies, and NYT headlines. https://t.co/rQHH6FYJlv",
+        "author_id": "745273",
+        "author_handle": "naval",
+        "date": "2025-12-03",
+        "relevance_score": 0,
+        "action": null
+    },
+    "1994906324468207765": {
+        "tweet_id": "1994906324468207765",
+        "text": "UI is pre-AI.",
+        "author_id": "745273",
+        "author_handle": "naval",
+        "date": "2025-12-03",
+        "relevance_score": 0,
+        "action": null
+    },
+    "1994529493101547921": {
+        "tweet_id": "1994529493101547921",
+        "text": "Crowds aren\u2019t wise - markets are wise, and mobs are dumb.",
+        "author_id": "745273",
+        "author_handle": "naval",
+        "date": "2025-12-03",
+        "relevance_score": 0,
+        "action": null
+    },
+    "1994501688271802670": {
+        "tweet_id": "1994501688271802670",
+        "text": "Full episode: \n\nhttps://t.co/PmwhF4WsoN",
+        "author_id": "745273",
+        "author_handle": "naval",
+        "date": "2025-12-03",
+        "relevance_score": 0,
+        "action": null
     }
 }
